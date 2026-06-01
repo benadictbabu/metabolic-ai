@@ -157,4 +157,3 @@ metabolic-ai/
 
 ---
 
-**Developed By:** Benadict Babu, Amandaz Biju Chiramel, Aryan K H, Rayan C V.

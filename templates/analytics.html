@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metabolic AI | Detailed Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { bgDark: '#0A0D12', cardSurface: '#12161E', primaryNeon: '#00D1FF', secondaryNeon: '#7C4DFF', textMain: '#E6EDF3', textMuted: '#8B949E' } } } }
+        Chart.defaults.color = '#8B949E';
+        Chart.defaults.font.family = 'sans-serif';
+    </script>
+    <style>
+        body {
+    /* Base background color from image */
+    background-color: #050816 !important;
+    
+    /* Combining Glow 1, Glow 2, and Glow 3 as a smooth ambient gradient */
+    background-image:
+        radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.20) 0px, transparent 50%),
+        radial-gradient(circle at 100% 0%, rgba(168, 85, 247, 0.18) 0px, transparent 50%),
+        radial-gradient(circle at 50% 100%, rgba(34, 211, 238, 0.12) 0px, transparent 50%) !important;
+        
+    background-attachment: fixed !important;
+}
+        .liquid-glass-panel {
+            background: linear-gradient(135deg, rgba(22, 27, 34, 0.45) 0%, rgba(13, 17, 23, 0.7) 100%);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+            border-radius: 2.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .liquid-glass-panel::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(124, 77, 255, 0.03) 0%, transparent 60%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .inner-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 1.5rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .history-panel { background: linear-gradient(180deg, #10141a 0%, #0d1117 100%); border-top: 1px solid rgba(124, 77, 255, 0.3); }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #7C4DFF; border-radius: 10px; opacity: 0.5; }
+    </style>
+</head>
+<body class="bg-bgDark text-textMain min-h-screen font-sans pb-0 overflow-x-hidden relative">
+    
+
+    <div class="fixed top-0 left-0 w-96 h-96 bg-secondaryNeon/10 rounded-full blur-[100px] pointer-events-none"></div>
+    <div class="fixed bottom-0 right-0 w-96 h-96 bg-primaryNeon/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+    <nav class="liquid-glass-panel !rounded-none !border-t-0 !border-l-0 !border-r-0 sticky top-0 z-50 px-6 py-4 mb-8 flex justify-between items-center border-b border-white/10">
+        <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primaryNeon to-secondaryNeon tracking-tight relative z-10">Metabolic AI</h1>
+        <div class="flex items-center gap-4 relative z-10">
+            <button onclick="window.location.href='/dashboard'" class="px-5 py-2.5 rounded-xl bg-black/50 border border-white/10 text-textMuted hover:text-white hover:border-white/30 transition-all text-sm font-bold">⬅ Back to Dashboard</button>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 space-y-12">
+        
+        <div class="liquid-glass-panel p-8 md:p-12">
+            <div class="relative z-10 mb-8">
+                <h2 class="text-3xl md:text-4xl font-black text-white">Current Day Overview</h2>
+                <p class="text-textMuted text-sm mt-2 max-w-2xl leading-relaxed">A real-time snapshot and clinical evaluation of your metabolic metrics recorded over the last 24 hours.</p>
+            </div>
+            
+            <div class="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="inner-card p-6 shadow-lg">
+                    <p class="text-[10px] uppercase tracking-widest text-textMuted font-bold mb-1">Calories Consumed</p>
+                    <div class="flex items-end gap-1">
+                        <span id="td-cal-curr" class="text-3xl font-black text-secondaryNeon">--</span>
+                        <span id="td-cal-targ" class="text-xs text-textMuted mb-1.5">/ -- kcal</span>
+                    </div>
+                </div>
+                <div class="inner-card p-6 shadow-lg">
+                    <p class="text-[10px] uppercase tracking-widest text-textMuted font-bold mb-1">Hydration Level</p>
+                    <div class="flex items-end gap-1">
+                        <span id="td-wat-curr" class="text-3xl font-black text-primaryNeon">--</span>
+                        <span id="td-wat-targ" class="text-xs text-textMuted mb-1.5">/ -- ml</span>
+                    </div>
+                </div>
+                <div class="inner-card p-6 shadow-lg">
+                    <p class="text-[10px] uppercase tracking-widest text-textMuted font-bold mb-1">Sleep & Recovery</p>
+                    <div class="flex items-end gap-1">
+                        <span id="td-slp-curr" class="text-3xl font-black text-emerald-400">--</span>
+                        <span id="td-slp-targ" class="text-xs text-textMuted mb-1.5">/ -- hrs</span>
+                    </div>
+                </div>
+                <div class="inner-card p-6 shadow-lg">
+                    <p class="text-[10px] uppercase tracking-widest text-textMuted font-bold mb-1">Physical Activity</p>
+                    <div class="flex items-end gap-1">
+                        <span id="td-stp-curr" class="text-3xl font-black text-orange-500">--</span>
+                        <span class="text-xs text-textMuted mb-1.5">steps</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="inner-card p-6 shadow-lg">
+                        <h3 class="text-xs uppercase tracking-widest text-white font-bold mb-4 pb-2 border-b border-white/5">Today's Dietary Log</h3>
+                        <div id="food-history" class="space-y-2 max-h-[140px] overflow-y-auto pr-2"></div>
+                    </div>
+                    <div class="inner-card p-6 shadow-lg">
+                        <h3 class="text-xs uppercase tracking-widest text-white font-bold mb-4 pb-2 border-b border-white/5">Today's Workouts</h3>
+                        <div id="workout-history" class="space-y-2 max-h-[140px] overflow-y-auto pr-2"></div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2 inner-card p-8 border border-secondaryNeon/20 shadow-2xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-48 h-48 bg-secondaryNeon/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+                    <h3 class="text-xl font-black text-white mb-6 flex items-center gap-3">
+                        <span class="bg-gradient-to-r from-secondaryNeon to-primaryNeon text-white text-xs px-3 py-1.5 rounded-lg shadow-lg">AI Core</span> 
+                        Executive Summary
+                    </h3>
+                    <div id="ai-insight-text" class="text-sm text-textMain leading-relaxed relative z-10 space-y-2">
+                        <p class="animate-pulse text-secondaryNeon font-bold">Analyzing your current data... Generating AI Report...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="liquid-glass-panel p-8 md:p-12 border-t border-primaryNeon/20 mt-12">
+            <div class="relative z-10 mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                <div>
+                    <h2 class="text-3xl md:text-4xl font-black text-white">Historical Progress</h2>
+                    <p class="text-textMuted text-sm mt-2 max-w-2xl leading-relaxed" id="history-insight-text">
+                        Loading clinical historical evaluation...
+                    </p>
+                </div>
+            </div>
+
+            <div class="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+                <div class="inner-card p-5 border-l-2 border-l-secondaryNeon">
+                    <p class="text-[9px] uppercase tracking-widest text-textMuted font-bold mb-1">Lifetime Avg Caloric Load</p>
+                    <span id="ov-cal" class="text-xl font-black text-white">--</span><span class="text-xs text-textMuted ml-1">kcal</span>
+                </div>
+                <div class="inner-card p-5 border-l-2 border-l-primaryNeon">
+                    <p class="text-[9px] uppercase tracking-widest text-textMuted font-bold mb-1">Lifetime Avg Hydration</p>
+                    <span id="ov-wat" class="text-xl font-black text-white">--</span><span class="text-xs text-textMuted ml-1">ml</span>
+                </div>
+                <div class="inner-card p-5 border-l-2 border-l-emerald-400">
+                    <p class="text-[9px] uppercase tracking-widest text-textMuted font-bold mb-1">Lifetime Avg Sleep</p>
+                    <span id="ov-slp" class="text-xl font-black text-white">--</span><span class="text-xs text-textMuted ml-1">hrs</span>
+                </div>
+                <div class="inner-card p-5 border-l-2 border-l-orange-500">
+                    <p class="text-[9px] uppercase tracking-widest text-textMuted font-bold mb-1">Overall Workout Compliance</p>
+                    <span id="ov-con" class="text-xl font-black text-white">--</span><span class="text-xs text-textMuted ml-1">%</span>
+                </div>
+            </div>
+
+            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 mb-4">
+                <div class="inner-card p-8 flex flex-col justify-between">
+                    <div class="mb-8">
+                        <h3 class="text-xl font-black text-white mb-2">Nutrition & Intake Mapping</h3>
+                        <p class="text-sm text-textMuted leading-relaxed">
+                            This analytical block tracks your daily net metabolic load (caloric intake minus expenditure) against fluid consumption. Proper homeostasis requires maintaining a stable net load below your maximum threshold, while ensuring aggressive water intake to aid in cellular metabolic processes.
+                        </p>
+                    </div>
+                    <div class="space-y-8">
+                        <div class="bg-black/20 p-4 rounded-xl border border-white/5">
+                            <p class="text-[10px] uppercase tracking-widest text-secondaryNeon font-bold mb-3">Net Caloric Load Mapping</p>
+                            <div class="h-40 w-full"><canvas id="calorieChart"></canvas></div>
+                        </div>
+                        <div class="bg-black/20 p-4 rounded-xl border border-white/5">
+                            <p class="text-[10px] uppercase tracking-widest text-primaryNeon font-bold mb-3">Fluid Consumption Trends (ml)</p>
+                            <div class="h-40 w-full"><canvas id="waterChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="inner-card p-8 flex flex-col justify-between">
+                    <div class="mb-8">
+                        <h3 class="text-xl font-black text-white mb-2">Exertion & Recovery Cycle</h3>
+                        <p class="text-sm text-textMuted leading-relaxed">
+                            Physical cardiovascular exertion (Steps/Workouts) directly degrades muscle tissue, which is only synthesized during deep sleep cycles. This block monitors your adherence to the mandatory 7-8 hour sleep baseline against your daily physical activity levels.
+                        </p>
+                    </div>
+                    <div class="space-y-8">
+                        <div class="bg-black/20 p-4 rounded-xl border border-white/5">
+                            <p class="text-[10px] uppercase tracking-widest text-emerald-400 font-bold mb-3">Central Nervous System Recovery (Sleep Hrs)</p>
+                            <div class="h-40 w-full"><canvas id="sleepChart"></canvas></div>
+                        </div>
+                        <div class="bg-black/20 p-4 rounded-xl border border-white/5">
+                            <p class="text-[10px] uppercase tracking-widest text-orange-500 font-bold mb-3">Cardiovascular Activity (Steps)</p>
+                            <div class="h-40 w-full"><canvas id="stepsChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const username = localStorage.getItem("active_user");
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!username) window.location.href = "/";
+            fetchAnalyticsData();
+        });
+
+        async function fetchAnalyticsData() {
+            try {
+                const response = await fetch('/api/analytics_data', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: username })
+                });
+                const data = await response.json();
+                
+                if (data.status === "success") {
+                    
+                    document.getElementById('td-cal-curr').textContent = data.today.calories.current;
+                    document.getElementById('td-cal-targ').textContent = `/ ${data.today.calories.target} kcal`;
+                    document.getElementById('td-wat-curr').textContent = data.today.water.current;
+                    document.getElementById('td-wat-targ').textContent = `/ ${data.today.water.target} ml`;
+                    document.getElementById('td-slp-curr').textContent = data.today.sleep.current;
+                    document.getElementById('td-slp-targ').textContent = `/ ${data.today.sleep.target} hrs`;
+                    document.getElementById('td-stp-curr').textContent = data.today.steps.current;
+
+                    document.getElementById('ai-insight-text').innerHTML = data.insight;
+                    document.getElementById('history-insight-text').innerHTML = data.history_insight;
+
+                    document.getElementById('ov-cal').textContent = data.overall.avg_cals;
+                    document.getElementById('ov-wat').textContent = data.overall.avg_water;
+                    document.getElementById('ov-slp').textContent = data.overall.avg_sleep;
+                    document.getElementById('ov-con').textContent = data.overall.consistency;
+
+                    renderLineChart('calorieChart', data.dates, data.charts.calories, '#7C4DFF', 'rgba(124, 77, 255, 0.15)');
+                    renderBarChart('waterChart', data.dates, data.charts.water, '#00D1FF');
+                    renderLineChart('sleepChart', data.dates, data.charts.sleep, '#10B981', 'rgba(16, 185, 129, 0.15)');
+                    renderBarChart('stepsChart', data.dates, data.charts.steps, '#F97316');
+
+                    const foodDiv = document.getElementById('food-history');
+                    if (data.today_foods.length > 0) {
+                        data.today_foods.forEach(f => {
+                            foodDiv.innerHTML += `<div class="bg-black/40 p-3 rounded-xl border border-white/5 text-[11px] text-textMain">${f}</div>`;
+                        });
+                    } else {
+                        foodDiv.innerHTML = `<p class="text-xs text-textMuted italic p-2">No dietary data logged today.</p>`;
+                    }
+
+                    const workDiv = document.getElementById('workout-history');
+                    if (data.today_workouts.length > 0) {
+                        data.today_workouts.forEach(w => {
+                            workDiv.innerHTML += `<div class="bg-black/40 p-3 rounded-xl border border-white/5 text-[11px] text-green-400 font-bold flex items-center gap-2"><span class="text-base leading-none">✓</span> ${w}</div>`;
+                        });
+                    } else {
+                        workDiv.innerHTML = `<p class="text-xs text-textMuted italic p-2">No exercise data logged today.</p>`;
+                    }
+                } else {
+                    document.getElementById('ai-insight-text').innerHTML = `<p class="text-red-400 font-bold">${data.message}</p>`;
+                }
+            } catch (err) { 
+                console.error("Analytics fetch error:", err); 
+            }
+        }
+
+        function renderLineChart(canvasId, labels, dataArr, borderColor, bgColor) {
+            new Chart(document.getElementById(canvasId), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataArr,
+                        borderColor: borderColor,
+                        backgroundColor: bgColor,
+                        borderWidth: 2.5,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#0A0D12',
+                        pointBorderColor: borderColor,
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false, backgroundColor: '#12161E', titleColor: '#fff', bodyColor: '#8B949E', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, beginAtZero: true, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        function renderBarChart(canvasId, labels, dataArr, color) {
+            new Chart(document.getElementById(canvasId), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataArr,
+                        backgroundColor: color,
+                        borderRadius: 6,
+                        hoverBackgroundColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false, backgroundColor: '#12161E', titleColor: '#fff', bodyColor: '#8B949E', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, beginAtZero: true, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

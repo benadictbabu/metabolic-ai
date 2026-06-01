@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metabolic AI | Master Plan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { bgDark: '#0b0f19', cardSurface: '#111827', textMain: '#E6EDF3', textMuted: '#9ca3af' } } } }
+    </script>
+    <style>
+        body {
+            background-color: #050816 !important;
+            background-image:
+                radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.20) 0px, transparent 50%),
+                radial-gradient(circle at 100% 0%, rgba(168, 85, 247, 0.18) 0px, transparent 50%),
+                radial-gradient(circle at 50% 100%, rgba(34, 211, 238, 0.12) 0px, transparent 50%) !important;
+            background-attachment: fixed !important;
+        }
+        .main-card { 
+            background-color: rgba(17, 24, 39, 0.85) !important;
+            backdrop-filter: blur(16px) !important;
+            -webkit-backdrop-filter: blur(16px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.05) !important;
+            border-radius: 1.5rem !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+        }
+    </style>
+</head>
+<body class="text-gray-200 min-h-screen flex items-center justify-center font-sans p-6 relative overflow-y-auto">
+    
+
+    
+    <div id="bg-glow" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] bg-blue-900/10 rounded-full blur-[150px] pointer-events-none z-0 transition-all duration-1000"></div>
+
+    <div id="plan-container" class="main-card w-full max-w-2xl p-10 rounded-3xl z-10 transition-all duration-700 opacity-0 translate-y-10">
+        
+        <div class="text-center mb-8 border-b border-gray-800/50 pb-6">
+            <p class="text-gray-400 text-sm tracking-widest uppercase font-bold mb-2">AI Clinical Evaluation</p>
+            <h1 class="text-3xl font-bold text-white tracking-wide">Your Metabolic Baseline</h1>
+        </div>
+
+        <div class="flex flex-col items-center justify-center mb-8">
+            <div id="score-ring" class="w-48 h-48 rounded-full border-[8px] flex flex-col items-center justify-center mb-6 shadow-[0_0_30px_rgba(0,0,0,0.3)] transition-all duration-1000">
+                <span class="text-sm font-bold uppercase tracking-widest text-gray-400 mb-1">Health Score</span>
+                <span id="score-text" class="text-6xl font-black">--</span>
+            </div>
+            <h2 id="status-text" class="text-2xl font-black uppercase tracking-widest text-center">Calculating...</h2>
+        </div>
+
+        <div class="bg-black/30 p-6 rounded-2xl border border-gray-800/30 mb-8">
+            <h3 class="text-xs uppercase tracking-widest text-gray-400 font-black mb-4 border-b border-white/5 pb-2">AI Coach Report</h3>
+            <div id="desc-text" class="text-sm text-gray-300 leading-relaxed italic text-center">
+                Please wait while the AI analyzes your profile data...
+            </div>
+        </div>
+
+        <button onclick="window.location.href='/dashboard'" class="w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 active:scale-95 transition-all shadow-lg">
+            Start My Transformation ➔
+        </button>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const username = localStorage.getItem("active_user");
+            if (!username) { window.location.href = "/"; return; }
+
+            try {
+                const response = await fetch('/api/profile', {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ username: username })
+                });
+                const data = await response.json();
+                
+                if (data.status === "success") {
+                    renderMasterPlan(data.score); // നമ്മൾ സ്കോർ മാത്രം കൊടുത്താൽ മതി, ബാക്കി ഇവിടെ സെറ്റ് ആകും
+                }
+            } catch (err) {
+                console.error("Error loading profile:", err);
+            }
+        });
+
+        function renderMasterPlan(score) {
+            const container = document.getElementById('plan-container');
+            const scoreText = document.getElementById('score-text');
+            const statusText = document.getElementById('status-text');
+            const descText = document.getElementById('desc-text');
+            const scoreRing = document.getElementById('score-ring');
+            const bgGlow = document.getElementById('bg-glow');
+
+            scoreText.textContent = score;
+            container.classList.remove('opacity-0', 'translate-y-10');
+
+            if (score >= 80) {
+                statusText.textContent = "ELITE METABOLISM";
+                scoreText.className = "text-6xl font-black text-[#4ade80]";
+                statusText.className = "text-2xl font-black uppercase tracking-widest text-center text-[#4ade80]";
+                scoreRing.className = "w-48 h-48 rounded-full border-[8px] flex flex-col items-center justify-center mb-6 shadow-[0_0_30px_rgba(74,222,128,0.3)] transition-all duration-1000 border-[#4ade80] bg-[#064e3b]/20";
+                bgGlow.className = "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] rounded-full blur-[150px] pointer-events-none z-0 transition-all duration-1000 bg-emerald-900/20";
+                
+                descText.innerHTML = `
+                    <div class="space-y-3 text-left not-italic">
+                        <p><strong class="text-[#4ade80] text-lg">🔥 Top 5% Performance Level!</strong></p>
+                        <p>Based on your BMI, age, and dietary habits, your body is functioning like a well-oiled machine. Your metabolism is highly efficient at burning calories.</p>
+                        <div class="bg-[#064e3b]/30 border border-[#4ade80]/30 p-4 rounded-xl mt-4">
+                            <strong class="text-white text-sm uppercase tracking-widest">🎯 Your Next Mission:</strong>
+                            <p class="text-gray-300 mt-1">Don't just maintain; let's build peak athletic endurance. Focus on the AI-generated high-intensity circuits in your dashboard to challenge your muscles.</p>
+                        </div>
+                    </div>`;
+            } else if (score >= 60) {
+                statusText.textContent = "BALANCED FOUNDATION";
+                scoreText.className = "text-6xl font-black text-blue-400";
+                statusText.className = "text-2xl font-black uppercase tracking-widest text-center text-blue-400";
+                scoreRing.className = "w-48 h-48 rounded-full border-[8px] flex flex-col items-center justify-center mb-6 shadow-[0_0_30px_rgba(96,165,250,0.3)] transition-all duration-1000 border-blue-500 bg-blue-900/20";
+                bgGlow.className = "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] rounded-full blur-[150px] pointer-events-none z-0 transition-all duration-1000 bg-blue-900/20";
+                
+                descText.innerHTML = `
+                    <div class="space-y-3 text-left not-italic">
+                        <p><strong class="text-blue-400 text-lg">🚀 Great Start, But We Can Do Better!</strong></p>
+                        <p>You have a stable metabolic foundation. However, slight adjustments in your daily routine and food choices can easily elevate you to optimal health.</p>
+                        <div class="bg-blue-900/30 border border-blue-500/30 p-4 rounded-xl mt-4">
+                            <strong class="text-white text-sm uppercase tracking-widest">🎯 Your Next Mission:</strong>
+                            <p class="text-gray-300 mt-1">Consistency is your secret weapon. Follow the hydration alerts strictly and try to hit your step targets daily using the dashboard.</p>
+                        </div>
+                    </div>`;
+            } else if (score >= 40) {
+                statusText.textContent = "METABOLIC SLOWDOWN";
+                scoreText.className = "text-6xl font-black text-orange-500";
+                statusText.className = "text-2xl font-black uppercase tracking-widest text-center text-orange-500";
+                scoreRing.className = "w-48 h-48 rounded-full border-[8px] flex flex-col items-center justify-center mb-6 shadow-[0_0_30px_rgba(249,115,22,0.3)] transition-all duration-1000 border-orange-500 bg-orange-900/20";
+                bgGlow.className = "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] rounded-full blur-[150px] pointer-events-none z-0 transition-all duration-1000 bg-orange-900/20";
+                
+                descText.innerHTML = `
+                    <div class="space-y-3 text-left not-italic">
+                        <p><strong class="text-orange-500 text-lg">⚠️ Warning: Sedentary Impact Detected.</strong></p>
+                        <p>Your current combination of physical metrics and activity indicates a slowing metabolism. The foods you eat aren't converting to energy efficiently, which can lead to fatigue.</p>
+                        <div class="bg-orange-900/30 border border-orange-500/30 p-4 rounded-xl mt-4">
+                            <strong class="text-white text-sm uppercase tracking-widest">🎯 Your Next Mission:</strong>
+                            <p class="text-gray-300 mt-1">This is 100% reversible! We need to wake up your metabolism. Log your meals honestly and start completing the beginner workouts provided in your dashboard.</p>
+                        </div>
+                    </div>`;
+            } else {
+                statusText.textContent = "HIGH RISK ALERT";
+                scoreText.className = "text-6xl font-black text-red-500";
+                statusText.className = "text-2xl font-black uppercase tracking-widest text-center text-red-500";
+                scoreRing.className = "w-48 h-48 rounded-full border-[8px] flex flex-col items-center justify-center mb-6 shadow-[0_0_30px_rgba(239,68,68,0.3)] transition-all duration-1000 border-red-500 bg-red-900/20";
+                bgGlow.className = "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] rounded-full blur-[150px] pointer-events-none z-0 transition-all duration-1000 bg-red-900/20";
+                
+                descText.innerHTML = `
+                    <div class="space-y-3 text-left not-italic">
+                        <p><strong class="text-red-500 text-lg">🚨 Critical Alert: Immediate Action Required!</strong></p>
+                        <p>Your physical metrics and habits place you in a high-risk category. Your body is struggling to process calories properly, which can lead to severe long-term health issues.</p>
+                        <div class="bg-red-900/30 border border-red-500/30 p-4 rounded-xl mt-4">
+                            <strong class="text-white text-sm uppercase tracking-widest">🎯 Your Next Mission:</strong>
+                            <p class="text-gray-300 mt-1">We are going to fix this together. Do not worry about heavy workouts right now. Your only goal today is to log your water intake and complete a 10-minute walk. Start now!</p>
+                        </div>
+                    </div>`;
+            }
+        }
+    </script>
+</body>
+</html>

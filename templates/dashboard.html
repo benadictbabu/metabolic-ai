@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metabolic AI | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { bgDark: '#0D1117', cardSurface: '#161B22', primaryNeon: '#00D1FF', secondaryNeon: '#7C4DFF', textMain: '#E6EDF3', textMuted: '#8B949E' } } } }
+    </script>
+    <style>
+        body {
+            /* Base background color from image */
+            background-color: #050816 !important;
+            
+            /* Combining Glow 1, Glow 2, and Glow 3 as a smooth ambient gradient */
+            background-image:
+                radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.20) 0px, transparent 50%),
+                radial-gradient(circle at 100% 0%, rgba(168, 85, 247, 0.18) 0px, transparent 50%),
+                radial-gradient(circle at 50% 100%, rgba(34, 211, 238, 0.12) 0px, transparent 50%) !important;
+                
+            background-attachment: fixed !important;
+        }
+        .glass-panel { background: rgba(22, 27, 34, 0.7); backdrop-filter: blur(24px); border: 1px solid rgba(0, 209, 255, 0.1); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); }
+        .progress-bar-glow { box-shadow: 0 0 15px rgba(0, 209, 255, 0.6); }
+        .progress-bar-glow-purple { box-shadow: 0 0 15px rgba(124, 77, 255, 0.6); }
+        .progress-bar-glow-green { box-shadow: 0 0 15px rgba(16, 185, 129, 0.6); } 
+        .progress-bar-glow-orange { box-shadow: 0 0 15px rgba(249, 115, 22, 0.6); }
+        .routine-card.done { background: rgba(0, 209, 255, 0.05); border-color: rgba(0, 209, 255, 0.3); opacity: 0.6; }
+        .routine-card.done h3 { text-decoration: line-through; color: #8B949E; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #7C4DFF; border-radius: 10px; opacity: 0.5; }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
+</head>
+<body class="bg-bgDark text-textMain min-h-screen font-sans pb-12 overflow-x-hidden">
+    
+    <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[12vw] font-black tracking-tighter whitespace-nowrap pointer-events-none z-0 opacity-80 bg-clip-text text-transparent bg-gradient-to-br from-blue-500 via-purple-500 to-cyan-500 select-none">
+        METABOLIC AI
+    </div>
+
+    <div class="w-full mb-4 z-10 relative flex justify-start pt-6 pl-6">
+        <div class="inline-flex items-center gap-4 bg-gray-900/60 px-6 py-3 rounded-2xl border border-gray-700/50 shadow-lg backdrop-blur-md">
+            <div class="flex flex-col text-left">
+                <span class="text-[10px] font-bold tracking-widest uppercase text-gray-400">Welcome ,</span>
+                <span id="nav-username" class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400 tracking-wide uppercase">
+                    USER
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-green-900/90 text-green-400 border border-green-500/50 px-6 py-3 rounded-xl shadow-2xl transition-all duration-500 -translate-y-20 opacity-0 z-[100] font-bold text-sm backdrop-blur-md pointer-events-none">
+        Action successful!
+    </div>
+
+    <nav class="glass-panel sticky top-0 z-50 px-6 py-4 mb-8 flex justify-between items-center border-b border-primaryNeon/20">
+        <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primaryNeon to-secondaryNeon tracking-tight">Metabolic AI</h1>
+        <div class="flex items-center gap-4">
+            <div class="text-right hidden md:block mr-4">
+                <p class="text-xs text-textMuted font-bold uppercase tracking-widest">Health Score</p>
+                <p id="ui-score" class="text-xl font-black text-primaryNeon">--/100</p>
+            </div>
+            <button onclick="window.location.href='/analytics'" class="px-4 py-2 rounded-lg bg-primaryNeon/10 border border-primaryNeon/30 text-primaryNeon hover:bg-primaryNeon/20 active:scale-95 transition-all text-sm font-bold">📊 Analytics</button>
+            <button onclick="logoutUser()" class="px-4 py-2 rounded-lg border border-red-500/50 text-red-400 hover:bg-red-500/10 active:scale-95 transition-all text-sm font-bold">Logout</button>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 z-10 relative">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="glass-panel p-6 rounded-3xl relative flex flex-col justify-between">
+                <div>
+                    <h2 class="text-textMuted text-xs uppercase tracking-widest mb-1 font-bold">Hydration Target</h2>
+                    <div class="flex items-end gap-2 mb-4">
+                        <span id="water-current" class="text-3xl font-black text-primaryNeon">0</span>
+                        <span id="water-target" class="text-xs font-bold text-textMuted mb-1">/ 0 ml</span>
+                    </div>
+                    <div class="w-full bg-bgDark rounded-full h-3 mb-6 shadow-inner overflow-hidden">
+                        <div id="water-bar" class="bg-primaryNeon h-3 rounded-full progress-bar-glow transition-all duration-1000 w-0"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex gap-2 mb-2">
+                        <button onclick="logWater(250)" class="flex-1 bg-primaryNeon/10 border border-primaryNeon/30 text-primaryNeon font-bold py-3 rounded-xl active:scale-95 transition-all text-xs">+ 250ml</button>
+                        <button onclick="logWater(500)" class="flex-1 bg-primaryNeon/10 border border-primaryNeon/30 text-primaryNeon font-bold py-3 rounded-xl active:scale-95 transition-all text-xs">+ 500ml</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="logWater(-250)" class="flex-1 bg-transparent border border-red-500/20 text-red-400 hover:bg-red-500/10 font-bold py-1.5 rounded-lg active:scale-95 transition-all text-[10px] uppercase tracking-wider">Undo 250</button>
+                        <button onclick="logWater(-500)" class="flex-1 bg-transparent border border-red-500/20 text-red-400 hover:bg-red-500/10 font-bold py-1.5 rounded-lg active:scale-95 transition-all text-[10px] uppercase tracking-wider">Undo 500</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 rounded-3xl relative flex flex-col justify-between overflow-hidden">
+                <div>
+                    <h2 class="text-textMuted text-xs uppercase tracking-widest mb-1 font-bold">Metabolic Load</h2>
+                    <div class="flex items-end gap-2 mb-4">
+                        <span id="cal-current" class="text-3xl font-black text-secondaryNeon">0</span>
+                        <span id="cal-target" class="text-xs font-bold text-textMuted mb-1">/ 0 kcal</span>
+                    </div>
+                    <div class="w-full bg-bgDark rounded-full h-3 mb-4 shadow-inner overflow-hidden">
+                        <div id="cal-bar" class="bg-secondaryNeon h-3 rounded-full progress-bar-glow-purple transition-all duration-1000 w-0"></div>
+                    </div>
+                </div>
+                <div class="flex-1 flex flex-col justify-end">
+                    <div class="mb-4 bg-black/20 rounded-xl p-2 border border-white/5 h-20 overflow-y-auto">
+                        <p class="text-[10px] text-textMuted font-bold tracking-widest mb-1 px-1">TODAY'S LOG (Click 'x' to remove)</p>
+                        <div id="logged-foods-list" class="space-y-1"></div>
+                    </div>
+                    <p id="time-context-label" class="text-[10px] text-secondaryNeon font-bold tracking-widest mb-1 pl-1">AI SUGGESTIONS</p>
+                    <div class="flex gap-2 mb-2 min-w-0">
+                        <select id="food-select" onchange="logDropdownFood()" class="flex-1 min-w-0 p-3 bg-bgDark rounded-xl border border-textMuted/30 focus:outline-none focus:border-secondaryNeon text-textMain text-xs truncate cursor-pointer"></select>
+                    </div>
+                    <div class="flex gap-2 min-w-0 relative">
+                        <input type="text" id="custom-food-name" onkeypress="handleCustomFoodKey(event)" placeholder="Type & press Enter..." class="flex-1 min-w-0 p-3 bg-bgDark rounded-xl border border-textMuted/30 focus:border-secondaryNeon text-textMain text-xs focus:outline-none pr-8">
+                        <span class="absolute right-3 top-3 text-textMuted text-xs font-bold opacity-50">↵</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 rounded-3xl relative flex flex-col justify-between">
+                <div>
+                    <h2 class="text-textMuted text-xs uppercase tracking-widest mb-1 font-bold">Activity Target</h2>
+                    <div class="flex items-end gap-2 mb-4">
+                        <span id="step-current" class="text-3xl font-black text-orange-500">0</span>
+                        <span id="step-target" class="text-xs font-bold text-textMuted mb-1">/ 10k steps</span>
+                    </div>
+                    <div class="w-full bg-bgDark rounded-full h-3 mb-6 shadow-inner overflow-hidden">
+                        <div id="step-bar" class="bg-orange-500 h-3 rounded-full progress-bar-glow-orange transition-all duration-1000 w-0"></div>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <div class="relative w-full">
+                        <input type="number" id="step-input" min="0" onkeydown="if(event.key==='-') event.preventDefault();" onkeypress="handleStepKey(event)" placeholder="Steps & press Enter..." class="w-full p-3 bg-bgDark rounded-xl border border-textMuted/30 focus:border-orange-500 text-textMain text-xs text-center focus:outline-none pr-8">
+                        <span class="absolute right-3 top-3 text-textMuted text-xs font-bold opacity-50">↵</span>
+                    </div>
+                    <button onclick="resetSteps()" class="w-full bg-transparent border border-red-500/20 text-red-400 hover:bg-red-500/10 font-bold py-1.5 rounded-lg active:scale-95 transition-all text-[10px] uppercase tracking-wider">Reset to 0</button>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 rounded-3xl relative flex flex-col justify-between">
+                <div>
+                    <h2 class="text-textMuted text-xs uppercase tracking-widest mb-1 font-bold">Recovery (Sleep)</h2>
+                    <div class="flex items-end gap-2 mb-4">
+                        <span id="sleep-current" class="text-3xl font-black text-emerald-400">0</span>
+                        <span id="sleep-target" class="text-xs font-bold text-textMuted mb-1">/ 8 hrs</span>
+                    </div>
+                    <div class="w-full bg-bgDark rounded-full h-3 mb-6 shadow-inner overflow-hidden">
+                        <div id="sleep-bar" class="bg-emerald-400 h-3 rounded-full progress-bar-glow-green transition-all duration-1000 w-0"></div>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-2 w-full justify-end h-full">
+                    <p class="text-[10px] text-textMuted font-bold tracking-widest mb-1 pl-1 text-center">TODAY'S SLEEP HOURS</p>
+                    <div class="relative w-full">
+                        <input type="number" id="sleep-input" min="0" onkeydown="if(event.key==='-') event.preventDefault();" onkeypress="handleSleepKey(event)" placeholder="Hours & press Enter..." class="w-full p-3 bg-bgDark rounded-xl border border-textMuted/30 focus:border-emerald-400 text-textMain text-xs text-center focus:outline-none pr-8">
+                        <span class="absolute right-3 top-3 text-textMuted text-xs font-bold opacity-50">↵</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel p-8 rounded-3xl mb-8 border border-secondaryNeon/20">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b border-white/5 pb-4 gap-2">
+                <div class="w-full md:w-auto">
+                    <h2 class="text-2xl font-black text-white flex items-center gap-2">🏋️‍♂️ AI Workout Circuit</h2>
+                    <p class="text-textMuted text-sm mt-1">Adaptive exercises generated from your 24-hour nutrition and recovery metrics.</p>
+                </div>
+                <div id="workout-status-tags" class="flex gap-2 flex-wrap"></div>
+            </div>
+            
+            <div class="w-full bg-bgDark rounded-full h-1.5 mb-6 shadow-inner overflow-hidden">
+                <div id="workout-bar" class="bg-secondaryNeon h-1.5 rounded-full progress-bar-glow-purple transition-all duration-1000 w-0"></div>
+            </div>
+            
+            <div id="workout-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                </div>
+        </div>
+
+        <div class="glass-panel p-8 rounded-3xl">
+            <div class="flex justify-between items-end mb-8 border-b border-white/5 pb-4">
+                <div>
+                    <h2 class="text-2xl font-black text-white">Full Day Dynamic Routine</h2>
+                    <p class="text-textMuted text-sm mt-1">Check off tasks manually or let AI auto-sync them as you log your day.</p>
+                </div>
+            </div>
+            <div id="routine-list" class="space-y-4"></div>
+        </div>
+
+    </div>
+
+    <script>
+        const username = localStorage.getItem("active_user");
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!username) window.location.href = "/";
+            
+            // യൂസറിന്റെ പേര് ഹെഡറിൽ കാണിക്കാൻ 
+            const navUserElement = document.getElementById('nav-username');
+            if (navUserElement) {
+                navUserElement.textContent = username;
+            }
+            
+            fetchDashboardData();
+        });
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.remove('-translate-y-20', 'opacity-0');
+            setTimeout(() => { toast.classList.add('-translate-y-20', 'opacity-0'); }, 3000); 
+        }
+
+        async function fetchDashboardData() {
+            try {
+                const response = await fetch('/api/dashboard_data', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: username })
+                });
+                const data = await response.json();
+                if (data.status === "success") updateUI(data);
+            } catch (err) { console.error("Dashboard fetch error:", err); }
+        }
+
+        function updateUI(data) {
+            document.getElementById('ui-score').textContent = data.score;
+            const displayCals = Math.max(0, data.current.calories);
+
+            document.getElementById('water-current').textContent = data.current.water_ml;
+            document.getElementById('water-target').textContent = `/ ${data.targets.water_ml} ml`;
+            document.getElementById('water-bar').style.width = `${Math.min((data.current.water_ml / data.targets.water_ml) * 100, 100)}%`;
+
+            document.getElementById('cal-current').textContent = data.current.calories;
+            document.getElementById('cal-target').textContent = `/ ${data.targets.calories} kcal`;
+            document.getElementById('cal-bar').style.width = `${Math.min((displayCals / data.targets.calories) * 100, 100)}%`;
+
+            document.getElementById('step-current').textContent = data.current.steps;
+            document.getElementById('step-target').textContent = `/ ${data.targets.steps}`;
+            document.getElementById('step-bar').style.width = `${Math.min((data.current.steps / data.targets.steps) * 100, 100)}%`;
+
+            document.getElementById('sleep-current').textContent = data.current.sleep_hrs;
+            document.getElementById('sleep-target').textContent = `/ ${data.targets.sleep_hrs} hrs`;
+            document.getElementById('sleep-bar').style.width = `${Math.min((data.current.sleep_hrs / data.targets.sleep_hrs) * 100, 100)}%`;
+
+            if(data.time_context) document.getElementById('time-context-label').textContent = `AI SUGGESTIONS FOR ${data.time_context.toUpperCase()}`;
+
+            const foodSelect = document.getElementById('food-select');
+            foodSelect.innerHTML = '<option value="" disabled selected>Select recommended food...</option>';
+            data.recommendations.forEach(food => {
+                foodSelect.innerHTML += `<option value="${food.name}|${food.cals}">${food.name} (~${food.cals} kcal)</option>`;
+            });
+
+            const loggedList = document.getElementById('logged-foods-list');
+            loggedList.innerHTML = '';
+            if (data.current.foods && data.current.foods.length > 0) {
+                [...data.current.foods].reverse().forEach(foodItem => {
+                    const safeFoodString = foodItem.replace(/'/g, "\\'");
+                    loggedList.innerHTML += `
+                        <div class="flex justify-between items-center bg-bgDark p-1.5 px-2 rounded border border-white/5 text-xs text-textMain">
+                            <span class="truncate pr-2">${foodItem}</span>
+                            <button onclick="deleteFood('${safeFoodString}')" class="text-red-400 hover:text-red-300 font-black px-2 py-0.5 rounded bg-red-900/20 transition-all">✕</button>
+                        </div>
+                    `;
+                });
+            } else {
+                loggedList.innerHTML = `<p class="text-xs text-textMuted italic p-1">No foods logged yet.</p>`;
+            }
+
+            // DYNAMIC EXERCISE WIDGET (SMART PARTIAL COMPLETION EDITING)
+            const workoutContainer = document.getElementById('workout-container');
+            const tagsContainer = document.getElementById('workout-status-tags');
+            workoutContainer.innerHTML = '';
+            tagsContainer.innerHTML = '';
+
+            const loggedWorkouts = data.current.workouts || [];
+            
+            let totalPct = 0;
+            let totalWorkouts = 0;
+            let actualCompletedCount = loggedWorkouts.length;
+
+            if(data.workout_payload) {
+                totalWorkouts = data.workout_payload.plan.length;
+                
+                const tags = data.workout_payload.status_tags;
+                if(tags.fatigued) tagsContainer.innerHTML += `<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-red-900/40 text-red-400 border border-red-500/30 uppercase tracking-wider">⚠️ Fatigue Recovery Mode</span>`;
+                if(tags.overfed) tagsContainer.innerHTML += `<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-purple-900/40 text-purple-400 border border-purple-500/30 uppercase tracking-wider">🔥 Calorie Burn Loaded</span>`;
+                if(tags.dehydrated) tagsContainer.innerHTML += `<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-orange-900/40 text-orange-400 border border-orange-500/30 uppercase tracking-wider">Cramp Safety Lock</span>`;
+                if(!tags.fatigued && !tags.overfed && !tags.dehydrated) tagsContainer.innerHTML += `<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-green-900/40 text-green-400 border border-green-500/30 uppercase tracking-wider">✅ Metabolic Flow Balanced</span>`;
+
+                data.workout_payload.plan.forEach(ex => {
+                    const isDoneLog = loggedWorkouts.find(w => w.split('|')[0].trim() === ex.name || w.split(' - ')[0].trim() === ex.name);
+                    const safeName = ex.name.replace(/'/g, "\\'");
+                    const safeMetrics = ex.metrics.replace(/'/g, "\\'");
+                    
+                    let actionHTML = '';
+                    let pct = 0;
+
+                    if(isDoneLog) {
+                        if (isDoneLog.includes('|')) {
+                            const parts = isDoneLog.split('|');
+                            pct = parseInt(parts[3]) || 0;
+                            const inputStr = parts[1].trim();
+                            const safeInputStr = inputStr.replace(/"/g, '&quot;');
+
+                            if (pct >= 100) {
+                                actionHTML = `<div class="mt-4 pt-3 border-t border-white/5 text-green-400 text-[11px] font-bold flex items-center gap-1.5"><span class="text-sm">✅</span> Fully Completed</div>`;
+                            } else {
+                                // NEW: Edit / Update Option for Partially Completed Exercises
+                                actionHTML = `
+                                    <div class="mt-4 pt-3 border-t border-white/5 flex flex-col gap-2">
+                                        <div class="text-orange-400 text-[11px] font-bold flex items-center gap-1.5">
+                                            <span class="text-sm">⚡</span> Partial (${pct}%): ${safeInputStr}
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <input type="text" id="ex-input-${safeName}" value="${safeInputStr}" class="flex-1 bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-textMain focus:outline-none focus:border-primaryNeon transition-all">
+                                            <button onclick="logWorkout('${safeName}', '${safeMetrics}')" class="bg-primaryNeon/20 hover:bg-primaryNeon/40 text-primaryNeon border border-primaryNeon/30 px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all active:scale-95">Update</button>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        } else {
+                            pct = 100;
+                            actionHTML = `<div class="mt-4 pt-3 border-t border-white/5 text-green-400 text-[11px] font-bold flex items-center gap-1.5"><span class="text-sm">✅</span> Fully Completed</div>`;
+                        }
+                    } else {
+                        actionHTML = `
+                            <div class="mt-4 pt-3 border-t border-white/5 flex gap-2">
+                                <input type="text" id="ex-input-${safeName}" value="${safeMetrics}" class="flex-1 bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-textMain focus:outline-none focus:border-primaryNeon transition-all">
+                                <button onclick="logWorkout('${safeName}', '${safeMetrics}')" class="bg-primaryNeon/20 hover:bg-primaryNeon/40 text-primaryNeon border border-primaryNeon/30 px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all active:scale-95">Done</button>
+                            </div>
+                        `;
+                    }
+                    
+                    totalPct += pct;
+
+                    workoutContainer.innerHTML += `
+                        <div class="bg-cardSurface/50 p-5 rounded-2xl border border-white/5 hover:border-secondaryNeon/40 transition-all flex flex-col justify-between">
+                            <div>
+                                <h4 class="text-base font-bold text-white tracking-tight mb-2">${ex.name}</h4>
+                                <span class="inline-block mb-3 bg-secondaryNeon/10 border border-secondaryNeon/30 text-secondaryNeon font-black text-[10px] px-2 py-1 rounded-md tracking-wider uppercase">${ex.metrics}</span>
+                                <p class="text-xs text-textMuted leading-relaxed">${ex.desc}</p>
+                            </div>
+                            ${actionHTML}
+                        </div>
+                    `;
+                });
+
+                const overallProgress = totalWorkouts > 0 ? (totalPct / (totalWorkouts * 100)) * 100 : 0;
+                document.getElementById('workout-bar').style.width = `${Math.min(overallProgress, 100)}%`;
+
+                const routineList = document.getElementById('routine-list');
+                routineList.innerHTML = ''; 
+                data.current.routine.forEach(task => {
+                    const isDoneClass = task.done ? 'done' : '';
+                    const isChecked = task.done ? 'checked' : '';
+                    
+                    let extraHTML = '';
+                    if (task.id === 'workout_time') {
+                        const pctRounded = Math.round(overallProgress);
+                        extraHTML = `
+                            <div class="w-full mt-3 pt-3 border-t border-white/5 pr-4">
+                                <div class="flex justify-between items-center mb-1.5">
+                                    <span class="text-[9px] text-textMuted font-bold uppercase tracking-widest">Circuit Overall Progress</span>
+                                    <span class="text-[10px] text-secondaryNeon font-black">${pctRounded}%</span>
+                                </div>
+                                <div class="w-full bg-black/40 rounded-full h-1.5 overflow-hidden">
+                                    <div class="bg-secondaryNeon h-1.5 rounded-full transition-all duration-1000 progress-bar-glow-purple" style="width: ${pctRounded}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    routineList.innerHTML += `
+                        <label class="block cursor-pointer group">
+                            <input type="checkbox" class="sr-only" ${isChecked} onchange="logRoutine('${task.id}', this.checked, '${task.title}')">
+                            <div class="routine-card ${isDoneClass} flex items-center p-5 rounded-2xl bg-bgDark border border-white/5 transition-all hover:border-primaryNeon/50">
+                                <div class="w-24 shrink-0 text-secondaryNeon font-black text-sm uppercase tracking-widest">${task.time}</div>
+                                <div class="flex-1 px-4 border-l border-white/10 ml-4 pl-6">
+                                    <h3 class="text-lg font-bold text-white transition-colors">${task.title}</h3>
+                                    <p class="text-textMuted text-sm mt-1">${task.desc}</p>
+                                    ${extraHTML}
+                                </div>
+                                <div class="w-8 h-8 rounded-lg border-2 border-white/20 flex items-center justify-center text-primaryNeon font-black text-lg transition-colors group-hover:border-primaryNeon">
+                                    ${task.done ? '✓' : ''}
+                                </div>
+                            </div>
+                        </label>
+                    `;
+                });
+            }
+        }
+
+        async function logData(type, value) {
+            await fetch('/api/log_action', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: username, type: type, value: value })
+            });
+            fetchDashboardData(); 
+        }
+
+        function logRoutine(id, isDone, title) {
+            logData('routine', { id: id, done: isDone });
+            showToast(isDone ? `Completed: ${title} ✅` : `Unmarked: ${title}`);
+        }
+
+        function logWater(amount) {
+            const currentWater = parseInt(document.getElementById('water-current').textContent) || 0;
+            if (amount < 0 && (currentWater + amount) < 0) amount = -currentWater; 
+            if (amount === 0) return; 
+            logData('water', amount);
+            showToast(amount > 0 ? `Added ${amount}ml Water 💧` : `Removed ${Math.abs(amount)}ml Water 💧`);
+        }
+
+        function deleteFood(foodString) {
+            logData('delete_food', foodString);
+            showToast("Removed: " + foodString);
+        }
+
+        function logDropdownFood() {
+            const select = document.getElementById('food-select').value;
+            if(!select) return;
+            const [name, cals] = select.split('|');
+            logData('food', { name: name, calories: parseInt(cals) });
+            showToast(`Added: ${name} (${cals} kcal) 🍽️`);
+            document.getElementById('food-select').selectedIndex = 0;
+        }
+
+        function handleCustomFoodKey(event) {
+            if (event.key === 'Enter') {
+                const name = document.getElementById('custom-food-name').value;
+                if(name) {
+                    logData('food', { name: name, calories: 0 }); 
+                    showToast(`Logged Custom Food: ${name} 🧠`);
+                    document.getElementById('custom-food-name').value = '';
+                }
+            }
+        }
+
+        function handleStepKey(event) {
+            if (event.key === 'Enter') {
+                const steps = document.getElementById('step-input').value;
+                if(steps && steps >= 0) {
+                    logData('steps', steps);
+                    showToast(`Added ${steps} Steps 🏃‍♂️`);
+                    document.getElementById('step-input').value = '';
+                }
+            }
+        }
+
+        function resetSteps() {
+            const currentSteps = parseInt(document.getElementById('step-current').textContent) || 0;
+            if (currentSteps > 0) {
+                logData('steps', -currentSteps);
+                showToast(`Reset steps to 0 🔄`);
+            }
+        }
+
+        function handleSleepKey(event) {
+            if (event.key === 'Enter') {
+                const hrs = document.getElementById('sleep-input').value;
+                if(hrs && hrs >= 0) {
+                    logData('sleep', hrs);
+                    showToast(`Logged ${hrs} hours of sleep 💤`);
+                    document.getElementById('sleep-input').value = '';
+                }
+            }
+        }
+
+        function logWorkout(name, target) {
+            const input = document.getElementById(`ex-input-${name}`).value.trim();
+            
+            let pct = 100;
+            if (input !== target) {
+                const getProduct = (str) => {
+                    const nums = str.match(/\d+/g);
+                    return nums ? nums.reduce((a, b) => a * parseInt(b), 1) : 0;
+                };
+                
+                const tNum = getProduct(target);
+                const iNum = getProduct(input);
+                
+                if (tNum > 0 && iNum >= 0) {
+                    pct = Math.min(Math.round((iNum / tNum) * 100), 100);
+                }
+            }
+
+            logData('workout', { name: name, input: input, target: target, pct: pct });
+            
+            if (pct >= 100) showToast(`Great job! Fully logged: ${name} 🔥`);
+            else showToast(`Workout updated: ${name} (${pct}%) ⚡`);
+        }
+
+        // ലോഗൗട്ട് ബട്ടൺ വർക്ക് ചെയ്യാൻ ഈ ഫംഗ്ഷൻ ഉപയോഗിക്കുക 
+        function logoutUser() {
+            localStorage.removeItem("active_user");
+            window.location.href = "/";
+        }
+    </script>
+</body>
+</html>

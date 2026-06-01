@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metabolic AI | Calibration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            /* ഒറിജിനൽ ഡാർക്ക് ബാക്ക്ഗ്രൗണ്ടും ഗ്ലോ എഫക്റ്റും */
+            background-color: #050816 !important;
+            background-image:
+                radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(circle at 100% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%),
+                radial-gradient(circle at 50% 100%, rgba(34, 211, 238, 0.10) 0px, transparent 50%) !important;
+            background-attachment: fixed !important;
+        }
+        
+        .main-card { 
+            background-color: rgba(17, 24, 39, 0.85); 
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
+        }
+        
+        .input-bg { background-color: #0b0f19; border-color: #1f2937; }
+        .input-bg:focus { border-color: #3b82f6; outline: none; }
+        .food-btn { background-color: #0b0f19; border-color: #1f2937; color: #d1d5db; }
+        .food-btn.selected { background-color: #25488e; border-color: #3b5ebb; color: #ffffff; }
+        
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-gray-200 min-h-screen flex items-center justify-center font-sans p-6 relative">
+    
+    
+    <div class="fixed top-0 left-0 w-[30rem] h-[30rem] bg-blue-900/20 rounded-full blur-[100px] pointer-events-none z-0"></div>
+    <div class="fixed bottom-0 right-0 w-[30rem] h-[30rem] bg-purple-900/20 rounded-full blur-[100px] pointer-events-none z-0"></div>
+
+    <div class="main-card w-full max-w-xl p-8 md:p-10 rounded-2xl z-10 border border-gray-800 my-8">
+        
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 tracking-wide mb-2">Metabolic AI</h1>
+            <p class="text-gray-400 text-sm">Let's build your personalized baseline.</p>
+        </div>
+
+        <div id="messageBox" class="hidden mb-6 p-4 rounded-lg bg-[#064e3b]/30 border border-[#065f46] text-[#4ade80] text-center text-sm"></div>
+
+        <form id="onboard-form" onsubmit="submitOnboarding(event)" class="space-y-6">
+            <input type="hidden" id="username">
+            
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-[11px] text-gray-400 uppercase tracking-widest mb-2">Age</label>
+                    <input type="number" id="age" class="input-bg w-full p-3 rounded-lg border text-center text-white" required min="10" max="100">
+                </div>
+                <div>
+                    <label class="block text-[11px] text-gray-400 uppercase tracking-widest mb-2">Weight (kg)</label>
+                    <input type="number" id="weight" step="0.1" class="input-bg w-full p-3 rounded-lg border text-center text-white" required>
+                </div>
+                <div>
+                    <label class="block text-[11px] text-gray-400 uppercase tracking-widest mb-2">Height (cm)</label>
+                    <input type="number" id="height" class="input-bg w-full p-3 rounded-lg border text-center text-white" required>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] text-gray-400 uppercase tracking-widest mb-2">How much physical activity do you get daily?</label>
+                <select id="activity" class="input-bg w-full p-3 rounded-lg border text-white appearance-none cursor-pointer" required>
+                    <option value="Sitting">Mostly Sitting (Desk job, studying, relaxing)</option>
+                    <option value="Light">Lightly Active (Household chores, walking)</option>
+                    <option value="Moderate">Moderately Active (Exercise 3-4 times/week)</option>
+                    <option value="Heavy">Very Active (Intense sports, manual labor)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] text-gray-400 uppercase tracking-widest mb-3">What types of food do you usually eat? (Select all that apply)</label>
+                <div class="grid grid-cols-3 gap-3">
+                    <button type="button" onclick="toggleFood(this)" class="food-btn py-2.5 rounded-lg border text-sm flex items-center justify-center gap-2 transition-colors">🍚 Rice</button>
+                    <button type="button" onclick="toggleFood(this)" class="food-btn py-2.5 rounded-lg border text-sm flex items-center justify-center gap-2 transition-colors">🫓 Wheat/Roti</button>
+                    <button type="button" onclick="toggleFood(this)" class="food-btn py-2.5 rounded-lg border text-sm flex items-center justify-center gap-2 transition-colors">🍗 Meat</button>
+                    <button type="button" onclick="toggleFood(this)" class="food-btn py-2.5 rounded-lg border text-sm flex items-center justify-center gap-2 transition-colors">🐟 Fish</button>
+                    <button type="button" onclick="toggleFood(this)" class="food-btn py-2.5 rounded-lg border text-sm flex items-center justify-center gap-2 transition-colors">🥚 Eggs</button>
+                    <button type="button" onclick="toggleFood(this)" class="food-btn py-2.5 rounded-lg border text-sm flex items-center justify-center gap-2 transition-colors">🥛 Dairy</button>
+                    <button type="button" onclick="toggleFood(this)" class="food-btn py-2.5 rounded-lg border text-sm flex items-center justify-center gap-2 transition-colors">🥗 Veggies</button>
+                    <button type="button" onclick="toggleFood(this)" class="food-btn py-2.5 rounded-lg border text-sm flex items-center justify-center gap-2 transition-colors">🍔 Fast Food</button>
+                    <button type="button" onclick="toggleFood(this)" class="food-btn py-2.5 rounded-lg border text-sm flex items-center justify-center gap-2 transition-colors">🍩 Sweets</button>
+                </div>
+            </div>
+
+            <button type="submit" id="submit-btn" class="w-full mt-4 py-3.5 rounded-lg font-bold text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 transition-opacity">
+                Generate My Baseline
+            </button>
+        </form>
+    </div>
+
+    <script>
+        let selectedFoods = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedUser = localStorage.getItem("active_user");
+            if (savedUser) {
+                document.getElementById('username').value = savedUser;
+            } else {
+                window.location.href = "/";
+            }
+        });
+
+        function toggleFood(btn) {
+            btn.classList.toggle('selected');
+            let foodMap = {
+                "🍚 Rice": "Rice", "🫓 Wheat/Roti": "Wheat/Roti", "🍗 Meat": "Chicken/Meat",
+                "🐟 Fish": "Fish", "🥚 Eggs": "Eggs", "🥛 Dairy": "Dairy",
+                "🥗 Veggies": "Vegetables", "🍔 Fast Food": "Junk Food", "🍩 Sweets": "Sweets"
+            };
+            const food = foodMap[btn.innerText.trim()] || btn.innerText.trim();
+            if (selectedFoods.includes(food)) {
+                selectedFoods = selectedFoods.filter(f => f !== food);
+            } else {
+                selectedFoods.push(food);
+            }
+        }
+
+        async function submitOnboarding(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            btn.innerText = "Saving Profile...";
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            if (selectedFoods.length === 0) {
+                alert("Please select at least one food source.");
+                btn.innerText = "Generate My Baseline";
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+
+            const payload = {
+                username: document.getElementById('username').value,
+                age: document.getElementById('age').value,
+                weight: document.getElementById('weight').value,
+                height: document.getElementById('height').value,
+                activity: document.getElementById('activity').value,
+                foods: selectedFoods
+            };
+
+            try {
+                const response = await fetch('/api/onboard', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                
+                if (data.status === "success") {
+                    const msgBox = document.getElementById('messageBox');
+                    msgBox.classList.remove('hidden');
+                    const w = parseFloat(payload.weight);
+                    const h = parseFloat(payload.height) / 100;
+                    const bmi = (w / (h * h)).toFixed(1);
+                    
+                    msgBox.innerHTML = `Profile saved! Your calculated BMI is ${bmi}.`;
+                    
+                    btn.innerText = "View AI Master Plan ➔";
+                    btn.onclick = (e) => {
+                        e.preventDefault();
+                        window.location.href = data.redirect || '/masterplan';
+                    };
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    alert("Error calibrating profile.");
+                    btn.innerText = "Generate My Baseline";
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Network error.");
+                btn.innerText = "Generate My Baseline";
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+    </script>
+</body>
+</html>

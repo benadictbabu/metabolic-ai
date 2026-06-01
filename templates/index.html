@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metabolic AI | Login</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bgDark: '#0D1117',
+                        cardSurface: '#161B22',
+                        primaryNeon: '#00D1FF',
+                        secondaryNeon: '#7C4DFF',
+                        textMain: '#E6EDF3',
+                        textMuted: '#8B949E'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .glass-card {
+            background: rgba(22, 27, 34, 0.7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(0, 209, 255, 0.15);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        }
+        
+        .glow-button:hover {
+            box-shadow: 0 0 25px rgba(0, 209, 255, 0.5);
+        }
+
+        .blob {
+            position: fixed; 
+            filter: blur(100px);
+            z-index: -1;
+            animation: pulse-slow 8s infinite ease-in-out alternate;
+        }
+        
+        @keyframes pulse-slow {
+            0% { transform: scale(1); opacity: 0.3; }
+            100% { transform: scale(1.2); opacity: 0.6; }
+        }
+    </style>
+</head>
+<body class="bg-bgDark text-textMain min-h-screen flex flex-col items-center justify-center overflow-x-hidden font-sans px-4 py-10 relative">
+
+    <div class="blob bg-primaryNeon w-[30rem] h-[30rem] rounded-full top-[-10%] left-[-10%] opacity-20"></div>
+    <div class="blob bg-secondaryNeon w-[30rem] h-[30rem] rounded-full bottom-[-10%] right-[-10%] opacity-20" style="animation-delay: -4s;"></div>
+
+    <div class="glass-card p-10 rounded-3xl w-full max-w-sm mx-auto my-auto relative z-10">
+        
+        <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primaryNeon to-secondaryNeon mb-2 text-center tracking-tight">Metabolic AI</h1>
+        <p class="text-textMuted text-sm text-center mb-8 font-medium tracking-wide">Secure Access Portal</p>
+
+        <div id="messageBox" class="hidden mb-6 p-4 rounded-xl text-sm text-center font-bold border transform transition-all"></div>
+
+        <form id="authForm" class="space-y-6">
+            <div class="group">
+                <label class="block text-textMuted text-xs uppercase tracking-widest mb-1.5 font-bold transition-colors group-focus-within:text-primaryNeon">Username</label>
+                <input type="text" id="username" class="w-full p-3.5 bg-bgDark rounded-xl border border-textMuted/30 focus:outline-none focus:border-primaryNeon focus:ring-1 focus:ring-primaryNeon transition-all text-textMain shadow-inner" required>
+            </div>
+            
+            <div class="group">
+                <label class="block text-textMuted text-xs uppercase tracking-widest mb-1.5 font-bold transition-colors group-focus-within:text-primaryNeon">Password</label>
+                <input type="password" id="password" class="w-full p-3.5 bg-bgDark rounded-xl border border-textMuted/30 focus:outline-none focus:border-primaryNeon focus:ring-1 focus:ring-primaryNeon transition-all text-textMain shadow-inner" required>
+            </div>
+
+            <div class="pt-4 space-y-4">
+                <button type="button" onclick="handleAuth('/api/login')" class="glow-button w-full bg-gradient-to-r from-primaryNeon to-secondaryNeon text-bgDark font-black py-4 px-4 rounded-xl transition-all transform hover:-translate-y-1 active:scale-95 duration-300">
+                    LOGIN
+                </button>
+                <button type="button" onclick="handleAuth('/api/register')" class="w-full bg-transparent border border-textMuted/50 hover:border-primaryNeon hover:text-primaryNeon text-textMuted font-bold py-3.5 px-4 rounded-xl transition-all duration-300 active:scale-95">
+                    CREATE ACCOUNT
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        async function handleAuth(endpoint) {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+
+            if (!user || !pass) {
+                showMessage("Authentication details required.", "bg-red-900/30 text-red-400 border-red-500/50");
+                return;
+            }
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage(result.message, "bg-green-900/30 text-primaryNeon border-primaryNeon/50");
+                    localStorage.setItem("active_user", user);
+                    
+                    // SMART FIX: If login provides a redirect, use it. Otherwise (registration), go to onboarding.
+                    const next_page = result.redirect || "/onboarding";
+                    setTimeout(() => window.location.href = next_page, 1000);
+                } else {
+                    showMessage(result.message, "bg-red-900/30 text-red-400 border-red-500/50");
+                }
+            } catch (error) {
+                showMessage("System offline.", "bg-red-900/30 text-red-400 border-red-500/50");
+            }
+        }
+
+        function showMessage(text, classes) {
+            const msgBox = document.getElementById('messageBox');
+            msgBox.textContent = text;
+            msgBox.className = `mb-6 p-4 rounded-xl text-sm text-center border ${classes}`;
+            msgBox.classList.remove("hidden");
+        }
+    </script>
+</body>
+</html>

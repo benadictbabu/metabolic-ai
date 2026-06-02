@@ -478,13 +478,24 @@ def log_action():
         
     elif action_type == 'steps':
         step_amt = int(value)
-        logs_collection.update_one({"username": username, "date": today}, {"$inc": {"steps": step_amt}})
+        burned_calories = int(step_amt * 0.04) # 1 step = 0.04 kcal burn
         
+        # 1. സ്റ്റെപ്പുകൾ കൂട്ടാനും കലോറി കുറയ്ക്കാനും ഉള്ള കോഡ് (Database Update)
+        logs_collection.update_one(
+            {"username": username, "date": today}, 
+            {"$inc": {"steps": step_amt, "calories_eaten": -burned_calories}}
+        )
+        
+        # 2. കലോറി മൈനസ് (0 ൽ താഴെ) ആവാതിരിക്കാൻ 
+        updated_log = logs_collection.find_one({"username": username, "date": today})
+        if updated_log and updated_log.get("calories_eaten", 0) < 0:
+            logs_collection.update_one({"username": username, "date": today}, {"$set": {"calories_eaten": 0}})
+        
+        # 3. ഹെൽത്ത് സ്കോർ അപ്ഡേറ്റ് ചെയ്യാൻ
         if step_amt > 0:
             adjust_user_health_score(username, step_amt * 0.0005) # 1000 steps gives +0.5 score
         elif step_amt < 0:
             adjust_user_health_score(username, step_amt * 0.0005) # Reduces if steps are reset
-        
     elif action_type == 'routine':
         is_done = value.get('done')
         logs_collection.update_one({"username": username, "date": today, "routine.id": value.get('id')}, {"$set": {"routine.$.done": is_done}})
@@ -541,7 +552,9 @@ def get_analytics():
     insight = "Based on your activity and dietary logging for <strong>today</strong>, here is your AI evaluation:<br><br>"
 
     # 1. Activity & Workout Check
-    if today_steps < (target_steps * 0.3) and today_workouts_count == 0:
+    if today_steps > (target_steps * 2):
+        insight += "⚠️ <strong>Overexertion Alert:</strong> Your physical activity is extremely high today. Ensure you consume enough electrolytes and rest well to prevent muscle breakdown.<br><br>"
+    elif today_steps < (target_steps * 0.3) and today_workouts_count == 0:
         insight += "⚠️ <strong>Sedentary Alert:</strong> Very low physical activity today. Your metabolism needs movement to function optimally. Try to complete a short walk or a workout.<br><br>"
     elif today_workouts_count > 0 or today_steps >= target_steps:
         insight += "🔥 <strong>Active Metabolism:</strong> Excellent physical activity today! You are actively burning calories and keeping your metabolic rate high.<br><br>"
@@ -559,7 +572,9 @@ def get_analytics():
         insight += "✅ <strong>Balanced Diet:</strong> Your caloric intake is perfectly aligned with your physical parameters today.<br><br>"
 
     # 3. Hydration Check
-    if today_water < target_water * 0.4:
+    if today_water > target_water + 1500:
+        insight += "⚠️ <strong>Over-Hydration Warning:</strong> You are consuming an excessive amount of water. This can dilute essential electrolytes like sodium in your body.<br><br>"
+    elif today_water < target_water * 0.4:
         insight += "⚠️ <strong>Dehydration Risk:</strong> Your water intake is critically low. Please drink more water to process your meals properly.<br><br>"
     elif today_water >= target_water:
         insight += "💧 <strong>Optimal Hydration:</strong> Great job hitting your daily water targets!<br><br>"
@@ -567,13 +582,14 @@ def get_analytics():
         insight += "🚰 <strong>Hydration Needed:</strong> You are on track, but still need a bit more water to hit your optimal daily target.<br><br>"
 
     # 4. Sleep/Recovery Check
-    if today_sleep == 0:
+    if today_sleep > 10:
+        insight += "⚠️ <strong>Oversleeping Alert:</strong> You slept for more than 10 hours. Excessive sleep can sometimes cause lethargy and slow down daytime metabolism.<br><br>"
+    elif today_sleep == 0:
         insight += "⏳ <strong>Pending Recovery:</strong> Don't forget to log your sleep tomorrow morning for a complete recovery analysis.<br><br>"
     elif today_sleep < 6.5:
         insight += f"⚠️ <strong>Recovery Deficit:</strong> Your sleep duration ({today_sleep} hrs) is sub-optimal for muscle recovery.<br><br>"
     else:
         insight += f"✅ <strong>Optimal Recovery:</strong> Your sleep cycle ({today_sleep} hrs) is perfectly maintained.<br><br>"
-
     # ----------------------------------------
 
     today_stats = {
